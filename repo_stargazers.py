@@ -11,7 +11,7 @@ import time
 access_token = <FILL IN>
 repo = "minimaxir/big-list-of-naughty-strings"
 
-fields = ["user_id", "username", "num_followers", "num_following", "num_repos","created_at","star_time"]
+fields = ["user_id", "username", "company", "num_followers", "num_following", "num_repos","created_at","star_time"]
 page_number = 0
 users_processed = 0
 stars_remaining = True
@@ -72,6 +72,7 @@ with open('%s-stargazers.csv' % repo.split('/')[1], 'wb') as stars:
 		data = json.loads(response.read())
 		
 		user_id = data['id']
+		company = data['company']
 		num_followers = data['followers']
 		num_following = data['following']
 		num_repos = data['public_repos']
@@ -80,7 +81,7 @@ with open('%s-stargazers.csv' % repo.split('/')[1], 'wb') as stars:
 		created_at = created_at + datetime.timedelta(hours=-5) # EST
 		created_at = created_at.strftime('%Y-%m-%d %H:%M:%S')
 		
-		stars_writer.writerow([user_id, username, num_followers, num_following, num_repos, created_at, user[1]])
+		stars_writer.writerow([user_id, username, company, num_followers, num_following, num_repos, created_at, user[1]])
 		
 		users_processed += 1
 		
