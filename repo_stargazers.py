@@ -7,11 +7,20 @@ import csv
 import urllib2
 import datetime
 import time
+import sys
 
-access_token = <FILL IN>
-repo = "minimaxir/big-list-of-naughty-strings"
+repo="appbaseio/dejavu"
+access_token="ce4d75e5bf40abeb7c5aea44379b67f58c26e0ca"
 
-fields = ["user_id", "username", "company", "num_followers", "num_following", "num_repos","created_at","star_time"]
+if len(sys.argv) < 2 or len(sys.argv) > 3:
+	print("Usage: python repo_stargazers.py user/repo [access_token]")
+elif len(sys.argv) == 2:
+	repo = sys.argv[1]
+else:
+	repo = sys.argv[1]
+	access_token = sys.argv[2]
+
+fields = ["firstname", "lastname", "company", "email", "num_followers", "num_repos", "created_at","star_time"]
 page_number = 0
 users_processed = 0
 stars_remaining = True
@@ -46,7 +55,7 @@ while stars_remaining:
 	
 	page_number += 1
 
-print "Done Gathering Stargazers for %s!" % repo	
+print "Done Gathering Stargazers for %s!" % repo
 
 list_stars = list(set(list_stars)) # remove dupes
 
@@ -57,7 +66,7 @@ print "Now Gathering Stargazers' GitHub Profiles..."
 ###	and writes to CSV
 ###
 		
-with open('%s-stargazers.csv' % repo.split('/')[1], 'wb') as stars:
+with open('%s-stargazers.csv' % repo.split('/')[1], 'w') as stars:
 
 	stars_writer = csv.writer(stars)
 	stars_writer.writerow(fields)
@@ -70,22 +79,31 @@ with open('%s-stargazers.csv' % repo.split('/')[1], 'wb') as stars:
 		req = urllib2.Request(query_url)
 		response = urllib2.urlopen(req)
 		data = json.loads(response.read())
-		
-		user_id = data['id']
+
+		name = data['name'] or ""
+		firstname = name.split(" ")[0]
+		lastname = " ".join(name.split(" ")[1:])
+		if firstname is not None:
+			firstname = firstname.encode('utf-8')
+		if lastname is not None:
+			lastname = lastname.encode('utf-8')
 		company = data['company']
+		if company is not None:
+			company = company.encode('utf-8')
+		email = data['email']
 		num_followers = data['followers']
-		num_following = data['following']
 		num_repos = data['public_repos']
 		
 		created_at = datetime.datetime.strptime(data['created_at'],'%Y-%m-%dT%H:%M:%SZ')
 		created_at = created_at + datetime.timedelta(hours=-5) # EST
 		created_at = created_at.strftime('%Y-%m-%d %H:%M:%S')
 		
-		stars_writer.writerow([user_id, username, company, num_followers, num_following, num_repos, created_at, user[1]])
+		if email is not None:
+			stars_writer.writerow([firstname, lastname, company, email, num_followers, num_repos, created_at, user[1]])
 		
 		users_processed += 1
 		
 		if users_processed % 100 == 0:
-			print "%s Users Processed: %s" % (users_processed, datetime.datetime.now())
+			print "%s Users Processed: %s, Page Number: %s" % (users_processed, datetime.datetime.now(), page_number)
 			
 		time.sleep(1) # stay within API rate limit of 5000 requests / hour + buffer
